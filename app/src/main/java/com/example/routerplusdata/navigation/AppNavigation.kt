@@ -22,16 +22,17 @@ fun AppNavigation() {
         ) {
             composable("home") {
                 HomeScreen(
-                    onNavigateToDetails = {
-                        navController.navigate("details")
+                    onNavigateToDetails = { animeId ->
+                        navController.navigate("details/$animeId")
                     }
                 )
             }
-            composable("details") {
+            composable("details/{animeId}") { backStackEntry ->
                 DetailsScreen(
                     onBackClick = {
                         navController.popBackStack()
-                    }
+                    },
+                    animeId = backStackEntry.arguments?.getString("animeId")
                 )
             }
         }
