@@ -23,12 +23,21 @@ data class AnimeAttributes(
     val popularityRank: Int,
     val status: String,
     val episodeCount: Int,
-    val coverImage: CoverImage?
+    val coverImage: CoverImage?,
+    val posterImage: PosterImage?
 )
 
 data class CoverImage(
     val tiny: String,
     val small: String,
+    val large: String,
+    val original: String,
+)
+
+data class PosterImage(
+    val tiny: String,
+    val small: String,
+    val medium: String,
     val large: String,
     val original: String,
 )
