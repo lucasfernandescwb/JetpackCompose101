@@ -176,7 +176,7 @@ fun DetailsScreen(
                                 .align(Alignment.BottomStart)
                         ) {
                             AsyncImage(
-                                model = anime.attributes.coverImage?.small ?: anime.attributes.coverImage?.tiny,
+                                model = anime.attributes.posterImage?.small ?: anime.attributes.posterImage?.tiny,
                                 contentDescription = anime.attributes.canonicalTitle,
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
