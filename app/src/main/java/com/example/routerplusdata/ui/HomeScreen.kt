@@ -44,6 +44,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,6 +64,8 @@ fun HomeScreen(
 ) {
     val viewModel: AnimeViewModel = viewModel()
     val listState = rememberLazyListState()
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(listState) {
         snapshotFlow {
@@ -119,7 +123,13 @@ fun HomeScreen(
             },
             trailingIcon = {
                 if (viewModel.searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { viewModel.clearSearch() }) {
+                    IconButton(
+                        onClick = {
+                            viewModel.clearSearch()
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        }
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Clear Search",
@@ -131,7 +141,13 @@ fun HomeScreen(
             singleLine = true,
             shape = RoundedCornerShape(24.dp),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { viewModel.performSearch() }),
+            keyboardActions = KeyboardActions(
+                onSearch = {
+                    viewModel.performSearch()
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                }
+            ),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
