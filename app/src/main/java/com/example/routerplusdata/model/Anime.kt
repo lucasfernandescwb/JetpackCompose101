@@ -1,7 +1,20 @@
 package com.example.routerplusdata.model
 
 data class AnimeResponse(
-    val data: List<Anime>
+    val data: List<Anime>,
+    val links: Links? = null,
+    val meta: Meta? = null,
+)
+
+data class Links(
+    val first: String? = null,
+    val prev: String? = null,
+    val next: String? = null,
+    val last: String? = null
+)
+
+data class Meta(
+    val count: Int? = null
 )
 
 data class SingleAnimeResponse(

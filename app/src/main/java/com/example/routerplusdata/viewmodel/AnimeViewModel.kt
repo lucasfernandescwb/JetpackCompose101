@@ -13,20 +13,34 @@ class AnimeViewModel : ViewModel() {
 
     var animes by mutableStateOf<List<Anime>>(emptyList())
         private set
-    var singleAnime by mutableStateOf<Anime?>(null)
-        private set
 
     var isLoading by mutableStateOf(true)
         private set
 
-    var isSingleAnimeLoading by mutableStateOf(false)
+    var isLoadingMore by mutableStateOf(false)
         private set
 
+    var canLoadMore by mutableStateOf(true)
+        private set
+
+    private var currentOffset = 0
+    private val pageSize = 20
+
     init {
+        loadInitialAnimes()
+    }
+
+    fun loadInitialAnimes() {
         viewModelScope.launch {
+            isLoading = true
+            currentOffset = 0
             try {
                 val response = RetrofitInstance.api.getTrendingAnime()
                 animes = response.data
+                currentOffset = response.data.size
+                if (response.data.isEmpty()) {
+                    canLoadMore = false
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
@@ -35,17 +49,33 @@ class AnimeViewModel : ViewModel() {
         }
     }
 
-    fun getSingleAnime(id: String) {
-        viewModelScope.launch {
-            isSingleAnimeLoading = true
+    fun loadMoreAnimes() {
+        if (isLoading || isLoadingMore || !canLoadMore) return
 
+        viewModelScope.launch {
+            isLoadingMore = true
             try {
-                val response = RetrofitInstance.api.getSingleAnime(id)
-                singleAnime = response.data
+                val response = RetrofitInstance.api.getAnimeList(
+                    limit = pageSize,
+                    offset = currentOffset,
+                    sort = "-userCount",
+                )
+
+                val newAnimes = response.data
+                if (newAnimes.isNotEmpty()) {
+                    val existingIds = animes.map { it.id }.toSet()
+                    val uniqueNewAnimes = newAnimes.filter { it.id !in existingIds }
+                    if (uniqueNewAnimes.isNotEmpty()) {
+                        animes += uniqueNewAnimes
+                    }
+                    currentOffset += newAnimes.size
+                } else {
+                    canLoadMore = false
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
-                isSingleAnimeLoading = false
+                isLoadingMore = false
             }
         }
     }
