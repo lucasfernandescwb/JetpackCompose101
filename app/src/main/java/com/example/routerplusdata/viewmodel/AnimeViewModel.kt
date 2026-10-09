@@ -7,11 +7,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.routerplusdata.data.RetrofitInstance
 import com.example.routerplusdata.model.Anime
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class AnimeViewModel : ViewModel() {
 
     var animes by mutableStateOf<List<Anime>>(emptyList())
+        private set
+
+    var searchQuery by mutableStateOf("")
         private set
 
     var isLoading by mutableStateOf(true)
@@ -25,9 +30,53 @@ class AnimeViewModel : ViewModel() {
 
     private var currentOffset = 0
     private val pageSize = 20
+    private var searchJob: Job? = null
 
     init {
         loadInitialAnimes()
+    }
+
+    fun onSearchQueryChange(newQuery: String) {
+        searchQuery = newQuery
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(400L)
+            performSearch()
+        }
+    }
+
+    fun clearSearch() {
+        searchQuery = ""
+        searchJob?.cancel()
+        loadInitialAnimes()
+    }
+
+    fun performSearch() {
+        searchJob?.cancel()
+        if (searchQuery.isBlank()) {
+            loadInitialAnimes()
+            return
+        }
+
+        viewModelScope.launch {
+            isLoading = true
+            currentOffset = 0
+            try {
+                val response = RetrofitInstance.api.getAnimeList(
+                    limit = pageSize,
+                    offset = 0,
+                    sort = null,
+                    text = searchQuery,
+                )
+                animes = response.data
+                currentOffset = response.data.size
+                canLoadMore = response.data.size >= pageSize
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                isLoading = false
+            }
+        }
     }
 
     fun loadInitialAnimes() {
@@ -38,9 +87,7 @@ class AnimeViewModel : ViewModel() {
                 val response = RetrofitInstance.api.getTrendingAnime()
                 animes = response.data
                 currentOffset = response.data.size
-                if (response.data.isEmpty()) {
-                    canLoadMore = false
-                }
+                canLoadMore = response.data.isNotEmpty()
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
@@ -55,11 +102,20 @@ class AnimeViewModel : ViewModel() {
         viewModelScope.launch {
             isLoadingMore = true
             try {
-                val response = RetrofitInstance.api.getAnimeList(
-                    limit = pageSize,
-                    offset = currentOffset,
-                    sort = "-userCount",
-                )
+                val response = if (searchQuery.isNotBlank()) {
+                    RetrofitInstance.api.getAnimeList(
+                        limit = pageSize,
+                        offset = currentOffset,
+                        sort = null,
+                        text = searchQuery,
+                    )
+                } else {
+                    RetrofitInstance.api.getAnimeList(
+                        limit = pageSize,
+                        offset = currentOffset,
+                        sort = "-userCount",
+                    )
+                }
 
                 val newAnimes = response.data
                 if (newAnimes.isNotEmpty()) {
@@ -69,6 +125,7 @@ class AnimeViewModel : ViewModel() {
                         animes += uniqueNewAnimes
                     }
                     currentOffset += newAnimes.size
+                    canLoadMore = newAnimes.size >= pageSize
                 } else {
                     canLoadMore = false
                 }

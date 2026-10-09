@@ -16,6 +16,7 @@ interface ApiService {
         @Query("page[limit]") limit: Int = 20,
         @Query("page[offset]") offset: Int = 0,
         @Query("sort") sort: String? = "-userCount",
+        @Query("filter[text]") text: String? = null,
     ): AnimeResponse
 
     @GET("anime/{id}")
